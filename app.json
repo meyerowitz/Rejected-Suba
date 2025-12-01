@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "ventana_conductor",
-    "slug": "ventana_conductor",
+    "name": "travel_home",
+    "slug": "travel_home",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
