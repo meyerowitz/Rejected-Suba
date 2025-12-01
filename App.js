@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import * as Location from 'expo-location';
 import { 
     SafeAreaView, 
     View, 
@@ -27,27 +28,58 @@ const COLORS = {
     gris: '#F2F2F2',  
 };
 
-// Rutas de las imágenes (usamos require() para recursos locales)
+// Rutas de las imágenes
 const BACKGROUND_IMAGE_SOURCE = require('./assets/Travel.png'); 
 
 // Simulamos los iconos de tu carpeta assets:
 const ASSET_IMAGES = {
-    PROFILE_PLACEHOLDER: require('./assets/perfil.png'), // Asume que tienes este placeholder
-    NAV_HOME_ACTIVE: require('./assets/home_activo.png'), // Icono Home activo (azul)
-    NAV_LOCATION_ACTIVE: require('./assets/ubi_activo.png'), // Icono Location activo (azul)
+    PROFILE_PLACEHOLDER: require('./assets/perfil.png'), 
+    NAV_HOME_ACTIVE: require('./assets/home_activo.png'), 
+    NAV_LOCATION_ACTIVE: require('./assets/ubi_activo.png'), 
     SEARCH_ICON: require('./assets/icono_flechas.png'),
     ICON_LOCATION: require('./assets/icono_ubicacion.png'),
 };
 
+
 const TravelHomeScreen = () => {
 
-    // Simulamos que el origen se carga del back-end y no se edita
-    const [origen, setOrigen] = useState('Parada Principal Sur'); 
-    // Usaremos esta variable para mostrar el destino seleccionado
+    const [currentLocationString, setCurrentLocationString] = useState('Buscando ubicación...');
+
+       // FUNCIÓN PARA OBTENER LA UBICACIÓN 
+    useEffect(() => {
+        (async () => {
+            // 1. Pedir Permiso de Ubicación
+            let { status } = await Location.requestForegroundPermissionsAsync();
+            if (status !== 'granted') {
+                setCurrentLocationString('Permiso de ubicación denegado.');
+                return;
+            }
+
+            // 2. Obtener las Coordenadas Actuales
+            let location = await Location.getCurrentPositionAsync({});
+            const { latitude, longitude } = location.coords;
+
+            // 3. Reverse Geocoding: Convertir Coordenadas a Dirección Legible 
+            //(me parecio fino, asi que lo deje) JAJAJ nose si Rebeca llegue a leer esto :D
+            // Esto convierte Lat/Lng en una calle, ciudad, etc.
+            let geocode = await Location.reverseGeocodeAsync({ latitude, longitude });
+
+            if (geocode && geocode.length > 0) {
+                const address = geocode[0];
+                const addressString = `${address.street || ''} ${address.streetNumber || ''}, ${address.city || address.subregion}`;
+                
+                setCurrentLocationString(addressString.trim() || 'Ubicación Desconocida');
+            } else {
+                setCurrentLocationString(`Lat: ${latitude.toFixed(4)}, Lon: ${longitude.toFixed(4)}`);
+            }
+        })();
+    }, []);
+    
+    // variable para mostrar el destino seleccionado
     const [destinoSeleccionado, setDestinoSeleccionado] = useState('Selecciona tu destino'); 
     const userName = "Miguel Gomez"; 
     
-    // Simulación de la foto de perfil (null para no foto, o URI para foto)
+    // Simulación de la foto de perfil 
     const [profileImageUri, setProfileImageUri] = useState(null); // Cambia a { uri: 'url_de_tu_foto' } para probar con foto
     
     // Estado para navegación activa en el footer
@@ -58,7 +90,7 @@ const TravelHomeScreen = () => {
     const searchRoute = () => console.log("Buscar Ruta");
     const openDestinationDropdown = () => console.log("Abrir modal o dropdown de Destino");
 
-    // --- RENDERIZADO DEL BOTÓN DE PERFIL ---
+    // --- BOTÓN DE PERFIL ---
     const renderProfileButton = () => {
         return (
             <TouchableOpacity style={styles.profileButton} onPress={goToProfile}>
@@ -104,7 +136,7 @@ const TravelHomeScreen = () => {
 
             <ScrollView contentContainerStyle={styles.scrollViewContent} style={styles.scrollViewStyle}>
                 
-                 {/* Barra de Búsqueda Flotante (Search) */}
+                 {/* Barra de Búsqueda Flotante */}
                 <TouchableOpacity style={styles.searchBar} onPress={() => console.log("Abrir Búsqueda General")}>
                     <TextInput
                         style={styles.searchInput}
@@ -116,36 +148,37 @@ const TravelHomeScreen = () => {
                 </TouchableOpacity>
 
 
-                {/* Card de Saldo Flotante (Naranja) */}
+                {/* Card de Saldo Flotante*/}
                 <View style={styles.balanceCard}>
                     <Text style={styles.balanceTitle}>Saldo actual</Text>
                     <Text style={styles.balanceAmount}>Bs. 54.59</Text>
                 </View>
 
-                {/* --- SECCIÓN DE RUTA (Origen, Destino y Botón) --- */}
-                {/* Usamos un contenedor Flexbox (routeSectionWrapper) para alinear todo horizontalmente */}
+                {/* --- SECCIÓN DE RUTA  --- */}
                 <View style={styles.routeSectionWrapper}>
                     
                     {/* Contenedor de Origen y Destino */}
                     <View style={styles.routeInputsContainer}>
                         
-                        {/* Campo de Origen (Solo Lectura) */}
-                        <View style={styles.routeFieldContainer}>
-                            <View style={styles.labelWithIcon}>
+                    {/* Campo de Origen*/}
+                    <View style={styles.routeFieldContainer}>
+
+                        <View style={styles.labelWithIcon}>
                                 <Image
                                     source={ASSET_IMAGES.NAV_LOCATION_ACTIVE}
                                     style={styles.labelIcon}
                                 />
                                 <Text style={styles.routeLabel}>Origen</Text>
                             </View>
-                            <TextInput
-                                style={styles.textInput}
-                                value={origen}
-                                editable={false}
-                            />
-                        </View>
+    
+                        <TextInput
+                            style={styles.textInput}
+                            value={currentLocationString} 
+                            editable={false}
+                         />
+                    </View>                                                                  
 
-                        {/* Campo de Destino (Dropdown - Desplegable) */}
+                        {/* Campo de Destino */}
                         <View style={styles.routeFieldContainer}>
                             <View style={styles.labelWithIcon}>
                                 <Image
@@ -165,15 +198,15 @@ const TravelHomeScreen = () => {
                             </TouchableOpacity>
                         </View>
 
+                    
+
+                   </View>
                     <TouchableOpacity style={styles.searchButton} onPress={searchRoute}>
                         <Image
                             source={ASSET_IMAGES.SEARCH_ICON}
-                            style={styles.searchButtonImage} // Nuevo estilo para la imagen
+                            style={styles.searchButtonImage}
                         />
                     </TouchableOpacity>
-
-                   </View>
-
 
                 </View>
             </ScrollView>
@@ -196,7 +229,7 @@ const TravelHomeScreen = () => {
                         style={styles.navImage}
                     />
                 </TouchableOpacity>
-                {/* Agregar más botones de navegación aquí si es necesario */}
+              
             </View>
         </SafeAreaView>
     );
@@ -209,7 +242,6 @@ const styles = StyleSheet.create({
         backgroundColor: 'transparent',
     },
 
-    // --- FONDO DE IMAGEN ---
     backgroundImage: {
         height: height, 
         position: 'absolute',
@@ -227,21 +259,21 @@ const styles = StyleSheet.create({
         
     },
     greetingText: {
-        fontSize: 24, // Ajustado el tamaño para que quepa mejor el nombre en dos líneas
+        fontSize: 24, 
         fontWeight: 'bold',
         color: COLORS.white,
         lineHeight: 28,
     },
     welcomeText: {
-        fontSize: 25, // Ajustado el tamaño
+        fontSize: 25, 
         fontWeight: 'bold', 
         color: COLORS.white,
         lineHeight: 50,
         marginLeft: 30,
-        marginTop: 25, // Espacio entre el nombre y el saludo
+        marginTop: 25, 
     },
     
-    // --- BOTÓN DE PERFIL ---
+  
     profileButton: {
         backgroundColor: 'transparent',
         borderWidth: 2,
@@ -252,19 +284,19 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         overflow: 'hidden',
-        marginBottom: 70, // Importante para que la imagen se adapte al círculo
+        marginBottom: 70, 
     },
     profileImage: {
         width: '100%',
         height: '100%',
     },
     profilePlaceholderIcon: {
-        width: '60%', // Tamaño del placeholder dentro del borde
+        width: '60%', 
         height: '60%',
-        tintColor: COLORS.white, // Opcional: para darle color al placeholder si es SVG o PNG de un solo color
+        tintColor: COLORS.white, 
     },
     
-    // Barra de Búsqueda Flotante
+
     searchBar: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -296,27 +328,25 @@ const styles = StyleSheet.create({
         color: COLORS.neutralGray,
     },
 
-    // --- CONTENIDO SCROLLABLE ---
+   
     scrollViewStyle: {
         flex: 1,
         zIndex: 1,
     },
     scrollViewContent: {
-        // Ajustamos la altura de paddingTop para compensar el nuevo tamaño de backgroundImage
         paddingTop: height * 0.45 - 50, 
         paddingHorizontal: 25,
         backgroundColor: 'transparent', 
         minHeight: height * 0.6, 
     },
 
-    // Card de Saldo Flotante (Naranja)
     balanceCard: {
         backgroundColor: COLORS.secondaryOrange,
         borderRadius: 15,
         padding: 20,
         alignItems: 'flex-start',
         marginBottom: 10, 
-        marginTop: -20, // Levantado para superponerse al fondo de imagen
+        marginTop: -20, 
         elevation: 8,
         shadowColor: COLORS.darkText,
         shadowOffset: { width: 0, height: 4 },
@@ -336,39 +366,38 @@ const styles = StyleSheet.create({
         color: COLORS.white,
     },
     
-    // Contenedor principal de Origen/Destino/Botón
     routeSectionWrapper: {
-        flexDirection: 'row', // Alinea los contenedores de ruta y el botón horizontalmente
-        alignItems: 'flex-start', // Alinea el botón con la parte inferior de los campos de ruta
+        flexDirection: 'row',
+        alignItems: 'flex-start', 
         paddingTop: 30, 
         paddingBottom: 20,       
         padding: 15,
-        marginTop: 5, // Para que el fondo blanco empiece más arriba
+        marginTop: 5, 
     },
 
-    // Contenedor que agrupa Origen y Destino (debe ocupar la mayor parte del espacio)
+    
     routeInputsContainer: {
-        flex: 1, // Toma todo el espacio disponible menos el botón
-        marginRight: 10, // Espacio antes del botón de búsqueda
+        flex: 1, 
+        marginRight: 10, 
     },
 
-    // Campos de Ruta individuales
+
     routeFieldContainer: {
-        marginBottom: 15, // Espacio entre Origen y Destino
+        marginBottom: 15, 
     },
-    // NUEVO ESTILO: Contenedor para el icono y el texto del label
+    
     labelWithIcon: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginBottom: 8, // Espacio entre el label (icono + texto) y el input
+        marginBottom: 8, 
     },
-    // NUEVO ESTILO: Icono dentro del label
+   
     labelIcon: {
-        width: 20, // Ajusta el tamaño del icono
+        width: 20, 
         height: 20,
         resizeMode: 'contain',
-        tintColor: COLORS.darkText, // Para que el icono sea del mismo color que el texto del label
-        marginRight: 8, // Espacio entre el icono y el texto "Origen"/"Destino"
+        tintColor: COLORS.darkText, 
+        marginRight: 8, 
     },
 
     routeLabel: {
@@ -385,17 +414,18 @@ const styles = StyleSheet.create({
         paddingHorizontal: 15,
         fontSize: 18,
         color: COLORS.darkText,
-        backgroundColor: COLORS.lightGray, // Usamos lightGray para campos no editables/seleccionables
-        justifyContent: 'center', // Para centrar el texto en el TouchableOpacity
+        backgroundColor: COLORS.lightGray, 
+        justifyContent: 'center', 
+        scroll
     },
 
-    // Estilos específicos para el campo de Destino (Dropdown)
+    
     dropdownInput: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
         paddingRight: 15,
-        backgroundColor: COLORS.white, // Blanco para el campo de selección
+        backgroundColor: COLORS.white, 
     },
     dropdownText: {
         fontSize: 18,
@@ -406,7 +436,7 @@ const styles = StyleSheet.create({
         color: COLORS.darkText,
     },
     
-    // --- BOTÓN DE BÚSQUEDA (LUPA) ---
+
     searchButton: {
         backgroundColor: COLORS.gris,
         width: 50,
@@ -415,16 +445,17 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         elevation: 3,
-        
+        marginTop: 100,
+        marginRight: -5,
     },
     searchButtonImage: {
-        width: 30, // Define el tamaño que tendrá el icono dentro del botón
+        width: 30, 
         height: 30,
         resizeMode: 'contain',
         tintColor: COLORS.primaryBlue,
     },
 
-    // --- BARRA DE NAVEGACIÓN INFERIOR (Footer) ---
+   
     footerNav: {
         flexDirection: 'row',
         justifyContent: 'space-around',
@@ -439,7 +470,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     navImage: {
-        width: 40, // Mantiene el tamaño de 30x30
+        width: 40, 
         height: 40,
         resizeMode: 'contain',
         marginBottom: 30,
