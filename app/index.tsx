@@ -1,6 +1,6 @@
 import { Text, View } from "react-native";
-import Home2 from './pages/Home2';
-import Navigation from './pages/Navigation';
+import Home2 from "./pages/Home2";
+import Navigation from "./pages/Navigation";
 
 export default function Index() {
   return (
