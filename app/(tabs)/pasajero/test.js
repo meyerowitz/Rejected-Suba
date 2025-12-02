@@ -1,9 +1,9 @@
-// App.js
+// PRIMERA VERSION RE CHOTA
 
-import * as Location from 'expo-location';
-import { useEffect, useRef, useState } from 'react';
-import { Alert, Button, Platform, SafeAreaView, StyleSheet, Text, View } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { StyleSheet, View, Text, Button, SafeAreaView, Alert, Platform } from 'react-native';
 import { WebView } from 'react-native-webview';
+import * as Location from 'expo-location';
 
 // --- DATOS Y CONSTANTES ---
 const routePoints = [
